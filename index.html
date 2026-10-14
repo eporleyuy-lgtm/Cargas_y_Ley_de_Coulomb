@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cargas eléctricas y ley de Coulomb</title>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f4;--panel:#fff;--ink:#1c2630;--mute:#5d6b7a;--line:#d3dae1;--pos:#c8352e;--neg:#2760c4;--acc:#e8a317;--ok:#1f8a53;--bad:#b3261e;--sim:#f8fafb;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121920;--panel:#1b2530;--ink:#e8edf2;--mute:#9aa8b6;--line:#33414f;--pos:#ee6a62;--neg:#6c9bf0;--sim:#141d26;--ok:#4cc386;--bad:#f2837c}}
+:root[data-theme="dark"]{--bg:#121920;--panel:#1b2530;--ink:#e8edf2;--mute:#9aa8b6;--line:#33414f;--pos:#ee6a62;--neg:#6c9bf0;--sim:#141d26;--ok:#4cc386;--bad:#f2837c}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Atkinson Hyperlegible",system-ui,"Segoe UI",sans-serif}
+main{max-width:720px;margin:0 auto;padding:14px 14px 40px}
+h1{font-size:1.35rem;margin:6px 0 2px}
+.sub{color:var(--mute);margin:0 0 12px;font-size:.95rem}
+nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px}
+nav button{flex:0 0 auto;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 12px;border-radius:20px;font:inherit;font-size:.9rem;cursor:pointer}
+nav button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+nav button.ok::after{content:" ✓";color:var(--ok)}
+nav button.on.ok::after{color:var(--bg)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px}
+.sim{background:var(--sim);padding:6px}
+svg{width:100%;height:auto;display:block}
+h2{font-size:1.1rem;margin:0 0 6px}
+p{margin:6px 0}
+.goal{border-left:4px solid var(--acc);padding-left:10px;color:var(--mute)}
+.ctl{display:grid;grid-template-columns:92px 1fr 78px;align-items:center;gap:8px;margin:8px 0}
+.ctl output{font-variant-numeric:tabular-nums;text-align:right;font-weight:700}
+input[type=range]{width:100%;accent-color:var(--ink);height:28px}
+button.b{border:1.5px solid var(--ink);background:var(--panel);color:var(--ink);padding:9px 13px;border-radius:8px;font:inherit;cursor:pointer;margin:3px 4px 3px 0}
+button.b.pri{background:var(--ink);color:var(--bg)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.live{background:var(--sim);border:1px dashed var(--line);border-radius:8px;padding:8px 10px;margin:8px 0;font-variant-numeric:tabular-nums}
+.big{font-size:1.15rem;font-weight:700}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.92rem}
+th,td{border-bottom:1px solid var(--line);padding:5px 6px;text-align:right}
+th{color:var(--mute);font-weight:700}
+.tw{overflow-x:auto}
+.quiz{border-top:1px solid var(--line);margin-top:12px;padding-top:10px}
+.opt{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:9px 11px;border-radius:8px;margin:5px 0;font:inherit;cursor:pointer}
+.opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,var(--panel))}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--panel))}
+.fb{font-size:.95rem;margin-top:4px}
+select{font:inherit;padding:5px;border-radius:6px;border:1.5px solid var(--ink);background:var(--panel);color:var(--ink);max-width:100%}
+.law{border:2px solid var(--ink);border-radius:10px;padding:14px;margin-top:10px}
+.law .f{font-size:1.5rem;text-align:center;margin:8px 0;font-weight:700}
+.nx{display:flex;justify-content:space-between;margin-top:6px}
+@media (prefers-reduced-motion:no-preference){svg line,svg polygon{transition:all .15s}}
+</style></head>
+<body><main>
+<h1>Cargas eléctricas y ley de Coulomb</h1>
+<p class="sub">Cinco actividades: explora, mide, descubre la ley.</p>
+<nav id="nav"></nav>
+<div class="card sim" id="simc"><svg id="sim" viewBox="0 0 360 170" role="img" aria-label="Simulación"></svg></div>
+<div class="card" id="act"></div>
+<div class="nx"><button class="b" onclick="go(step-1)">← Anterior</button><button class="b pri" onclick="go(step+1)">Siguiente →</button></div>
+</main>
+<script>
+const K=8.99e9, NS='http://www.w3.org/2000/svg';
+let S={q1:4,q2:-4,r:0.5}, step=0, done={}, rec3=[], rec4=[], bod={A:6,B:6}, QX=[], P=6;
+const names=['Introducción','1 · Dos tipos de carga','2 · Cargar y conservar','3 · Distancia','4 · Valor de las cargas','5 · Ley de Coulomb'];
+const n=(x,d=2)=>(+x).toLocaleString('es',{minimumFractionDigits:d,maximumFractionDigits:d});
+const sg=q=>q>0?'+':q<0?'−':'';
+const Fm=()=>K*Math.abs(S.q1*S.q2)*1e-12/(S.r*S.r);
+const sf=(x,k)=>x==0?'0':(+x).toPrecision(k).replace('.',','), nf=F=>sf(F,3), nfa=F=>F==0?'0 N':sf(F,3)+' N ≈ '+sf(F,2)+' N';
+const col=q=>q>0?'var(--pos)':q<0?'var(--neg)':'var(--mute)';
+
+function arrow(x,y,d,len,c){const x2=x+d*len,h=7;
+ return `<line x1="${x}" y1="${y}" x2="${x2}" y2="${y}" stroke="${c}" stroke-width="4"/><polygon points="${x2+d*h},${y} ${x2},${y-6} ${x2},${y+6}" fill="${c}"/>`}
+function vl(x,y,s){return `<text x="${x-7}" y="${y}" font-size="14" font-weight="700" fill="currentColor">F<tspan font-size="9" dy="3">${s}</tspan></text><line x1="${x-7}" y1="${y-14}" x2="${x}" y2="${y-14}" stroke="currentColor" stroke-width="1.3"/><polygon points="${x+3.5},${y-14} ${x-1},${y-17} ${x-1},${y-11}" fill="currentColor"/>`}
+function drawSim(){const el=document.getElementById('sim');let h='';
+ if(step==-1){h=imode=='g'?globo():atom()}else if(step==1){h=bodies()}else{
+ const x1=75,x2=75+S.r*250,y=80,r1=12+Math.abs(S.q1)*0.8,r2=12+Math.abs(S.q2)*0.8;
+ const F=Fm(),len=F>0?Math.min(30,6+10*Math.log10(1+F)):0,rep=S.q1*S.q2>0;
+ h+=`<circle cx="${x1}" cy="${y}" r="${r1}" fill="${col(S.q1)}"/><circle cx="${x2}" cy="${y}" r="${r2}" fill="${col(S.q2)}"/>`;
+ h+=`<g fill="#fff" font-size="16" font-weight="700" text-anchor="middle"><text x="${x1}" y="${y-2}">${sg(S.q1)||'0'}</text><text x="${x2}" y="${y-2}">${sg(S.q2)||'0'}</text></g>`;
+ if(len>0){const d1=rep?-1:1,L=rep?len:Math.min(len,Math.max(4,(x2-x1)/2-4-Math.max(r1,r2)));h+=arrow(x1,y,d1,r1+L,'var(--acc)')+arrow(x2,y,-d1,r2+L,'var(--acc)')+vl(x1+d1*(r1+L/2),y-r1-8,'₂₁')+vl(x2-d1*(r2+L/2),y-r2-8,'₁₂')}
+ h+=`<g fill="currentColor" font-size="12" text-anchor="middle"><text x="${x1}" y="${y+r1+18}" fill="${col(S.q1)}">q₁ = ${sg(S.q1)}${n(Math.abs(S.q1),1)} μC</text><text x="${x2}" y="${y+r2+18}" fill="${col(S.q2)}">q₂ = ${sg(S.q2)}${n(Math.abs(S.q2),1)} μC</text></g>`;
+ h+=`<line x1="${x1}" y1="150" x2="${x2}" y2="150" stroke="currentColor" stroke-width="1.5"/><line x1="${x1}" y1="144" x2="${x1}" y2="156" stroke="currentColor"/><line x1="${x2}" y1="144" x2="${x2}" y2="156" stroke="currentColor"/>`;
+ h+=`<text x="${(x1+x2)/2}" y="142" font-size="12" text-anchor="middle" fill="currentColor">r = ${n(S.r)} m</text>`;
+ h+=`<text x="8" y="16" font-size="12" fill="currentColor">Módulo de cada fuerza: F = ${nfa(F)}</text>`}
+ el.setAttribute('viewBox',step==-1||step==1?'0 0 360 170':'0 0 410 170');el.style.color='var(--ink)';el.innerHTML=h}
+function bodies(){let h='';
+ [['A','Paño',20],['B','Barra',200]].forEach(([k,t,x])=>{const e=bod[k],q=P-e;
+ h+=`<rect x="${x}" y="24" width="140" height="100" rx="10" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="${x+70}" y="18" font-size="13" text-anchor="middle" fill="currentColor" font-weight="700">${t} (${k})</text>`;
+ for(let i=0;i<P;i++)h+=`<circle cx="${x+22+i*20}" cy="48" r="8" fill="var(--pos)"/><text x="${x+22+i*20}" y="52" font-size="12" fill="#fff" text-anchor="middle">+</text>`;
+ for(let i=0;i<e;i++)h+=`<circle cx="${x+22+(i%6)*20}" cy="${78+Math.floor(i/6)*20}" r="8" fill="var(--neg)"/><text x="${x+22+(i%6)*20}" y="${82+Math.floor(i/6)*20}" font-size="12" fill="#fff" text-anchor="middle">−</text>`;
+ h+=`<text x="${x+70}" y="148" font-size="13" text-anchor="middle" fill="${col(q)}" font-weight="700">q = ${q>0?'+':q<0?'−':''}${Math.abs(q)} e</text>`;
+ h+=`<text x="${x+70}" y="164" font-size="11" text-anchor="middle" fill="currentColor">${n(q*1.602e-19*1e19,2)}×10⁻¹⁹ C</text>`});
+ return h}
+
+function sl(label,key,min,max,st,unit,fmt){return `<div class="ctl"><label for="s_${key}">${label}</label><input id="s_${key}" type="range" min="${min}" max="${max}" step="${st}" value="${S[key]}" oninput="S.${key}=+this.value;upd()"><output id="o_${key}">${fmt(S[key])}</output></div>`}
+const fq=v=>(v>0?'+':v<0?'−':'')+n(Math.abs(v),1)+' μC', fqa=v=>n(v,1)+' μC', fr=v=>n(v)+' m';
+function quiz(q,opts,ok,ex){const id=QX.push(ex)-1;return `<div class="quiz"><b>${q}</b>${opts.map((o,i)=>`<button class="opt" onclick="ans(this,${i==ok},${id})">${o}</button>`).join('')}<div class="fb" aria-live="polite"></div></div>`}
+function ans(b,ok,id){const q=b.parentNode;b.className='opt '+(ok?'right':'wrong');q.querySelector('.fb').textContent=ok?'✔ Correcto. '+QX[id]:'Aún no. Vuelve a probar con el simulador.';if(ok){done[step]=1;nav()}}
+function nav(){const e=document.getElementById('nav');e.innerHTML=names.map((t,i)=>`<button class="${i-1==step?'on':''} ${done[i-1]?'ok':''}" onclick="go(${i-1})">${t}</button>`).join('')}
+
+function liveHTML(){const F=Fm();
+ if(step==0){const t=S.q1*S.q2;return t>0?'<span class="big">Repulsión</span> · cargas del mismo signo':t<0?'<span class="big">Atracción</span> · cargas de signo contrario':'<span class="big">Sin interacción</span> · un cuerpo neutro no ejerce esta fuerza'}
+ if(step==2||step==3)return `F = <span class="big">${nfa(F)}</span>`;
+ if(step==4)return `F = k·|q₁q₂|/r² = (8,99×10⁹)(${n(Math.abs(S.q1),1)}×10⁻⁶)(${n(Math.abs(S.q2),1)}×10⁻⁶)/(${n(S.r)})² = <span class="big">${nfa(F)}</span>`}
+function upd(){['q1','q2','r'].forEach(k=>{const o=document.getElementById('o_'+k);if(o)o.textContent=(k=='r'?fr:(step==3?fqa:fq))(S[k])});
+ const l=document.getElementById('live');if(l)l.innerHTML=liveHTML();drawSim()}
+
+let imode='a',gt=0;
+function globo(){const c=(x,y,s,f)=>`<circle cx="${x}" cy="${y}" r="7" fill="${f}"/><text x="${x}" y="${y+4}" font-size="12" fill="#fff" text-anchor="middle">${s}</text>`;
+ let h=`<rect x="14" y="30" width="142" height="100" rx="10" fill="none" stroke="currentColor" stroke-width="1.5"/><ellipse cx="270" cy="80" rx="62" ry="64" fill="none" stroke="currentColor" stroke-width="1.5"/><g font-size="13" font-weight="700" text-anchor="middle" fill="currentColor"><text x="85" y="22">Cabello</text><text x="270" y="12">Globo</text></g>`;
+ for(let i=0;i<6;i++)h+=c(32+i*20,56,'+','var(--pos)')+c(225+i*18,56,'+','var(--pos)');
+ for(let i=0;i<6-gt;i++)h+=c(32+i*20,92,'−','var(--neg)');
+ for(let i=0;i<6+gt;i++)h+=c(225+(i%6)*18,86+Math.floor(i/6)*22,'−','var(--neg)');
+ h+=`<text x="85" y="150" font-size="13" font-weight="700" text-anchor="middle" fill="${gt?'var(--pos)':'var(--mute)'}">q = ${gt?'+'+gt:0} e</text><text x="270" y="164" font-size="13" font-weight="700" text-anchor="middle" fill="${gt?'var(--neg)':'var(--mute)'}">q = ${gt?'−'+gt:0} e</text>`;return h}
+function gx(){const l=document.getElementById('live');if(l)l.innerHTML=gt==0?'Cabello y globo neutros: igual número de protones y electrones.':`El globo ganó ${gt} electrón(es): carga <b>negativa</b>. El cabello los perdió: carga <b>positiva</b>. <span class="big">Cargas opuestas: se atraen.</span>`}
+function gl(d){imode='g';gt=Math.max(0,Math.min(6,gt+d));drawSim();atx()}
+let ae=3;
+function atom(){let h='<ellipse cx="180" cy="85" rx="75" ry="62" fill="none" stroke="currentColor" stroke-dasharray="4 4" opacity=".5"/>';
+ [[-7,-5],[7,-5],[0,7]].forEach(([x,y])=>h+=`<circle cx="${180+x}" cy="${85+y}" r="8" fill="var(--pos)"/><text x="${180+x}" y="${89+y}" font-size="12" fill="#fff" text-anchor="middle">+</text>`);
+ [[-15,6],[15,6]].forEach(([x,y])=>h+=`<circle cx="${180+x}" cy="${85+y}" r="8" fill="var(--mute)"/><text x="${180+x}" y="${89+y}" font-size="11" fill="#fff" text-anchor="middle">0</text>`);
+ for(let i=0;i<ae;i++){const t=2*Math.PI*i/ae-1.2,x=180+75*Math.cos(t),y=85+62*Math.sin(t);h+=`<circle cx="${x}" cy="${y}" r="8" fill="var(--neg)"/><text x="${x}" y="${y+4}" font-size="12" fill="#fff" text-anchor="middle">−</text>`}
+ h+=`<text x="8" y="16" font-size="12" fill="currentColor">Modelo de un átomo: 3 protones y 2 neutrones en el núcleo</text>`;return h}
+function atx(){if(imode=='g')return gx();const q=3-ae,l=document.getElementById('live');if(l)l.innerHTML=`3 protones (+) · ${ae} electrones (−) → <span class="big">${q==0?'átomo neutro':q>0?'carga neta positiva (+'+q+')':'carga neta negativa ('+q.toString().replace('-','−')+')'}</span>`}
+function ae2(d){imode='a';ae=Math.max(0,Math.min(6,ae+d));drawSim();atx()}
+function intro(){return `<h2>Antes de empezar: ¿qué es la carga eléctrica?</h2><p class="goal">Objetivo: conocer las ideas básicas que usarás en las actividades.</p>
+<p>Toda la materia está formada por <b>átomos</b>. Dentro de un átomo hay partículas con una propiedad llamada <b>carga eléctrica</b>:</p>
+<p><b style="color:var(--pos)">Protón (+):</b> está en el núcleo y no se mueve de un cuerpo a otro.<br><b style="color:var(--neg)">Electrón (−):</b> está alrededor del núcleo y sí puede pasar de un cuerpo a otro.<br><b>Neutrón (0):</b> también está en el núcleo, pero no tiene carga eléctrica.</p>
+<p>Prueba en la simulación: quita o agrega electrones al átomo y observa su carga neta.</p>
+<button class="b pri" onclick="ae2(-1)">Quitar un electrón</button><button class="b" onclick="ae2(1)">Agregar un electrón</button><button class="b" onclick="ae=3;gt=0;imode='a';drawSim();atx()">Reiniciar</button>
+<p><b>Ejemplo cotidiano: el globo y el cabello.</b> Al frotar un globo con el cabello, algunos electrones pasan del cabello al globo. Pulsa el botón y observa qué carga queda en cada uno.</p>
+<button class="b pri" onclick="gl(1)">Frotar el globo</button><button class="b" onclick="gl(-1)">Deshacer</button><button class="b" onclick="imode='a';drawSim();atx()">Ver el átomo</button>
+<div class="live" id="live"></div>
+<p><b>Ideas clave</b></p>
+<p>• Igual cantidad de protones y electrones: el cuerpo es <b>neutro</b>.<br>• Exceso de electrones: carga <b>negativa</b>. Falta de electrones: carga <b>positiva</b>.<br>• La carga se mide en <b>coulombs (C)</b>. Un electrón tiene −1,6×10⁻¹⁹ C y un protón +1,6×10⁻¹⁹ C: es la menor carga que se encuentra libre.<br>• Un coulomb es muy grande, así que se usa el <b>microcoulomb</b>: 1 μC = 0,000001 C.<br>• La distancia se mide en metros (m) y la fuerza en newtons (N).</p>
+${quiz('Un átomo neutro pierde un electrón. Ahora tiene carga…',['negativa','positiva','sigue neutro'],1,'Quedan más protones (+) que electrones (−), así que la carga neta es positiva.')}
+${quiz('Al frotar el globo con el cabello, el globo queda con carga negativa porque…',['perdió protones','ganó electrones','ganó protones'],1,'Solo los electrones se mueven. El globo ganó electrones (carga negativa) y el cabello los perdió (carga positiva); por eso se atraen.')}
+<p class="fb">Cuando termines, pulsa Siguiente para la Actividad 1.</p>`}
+function go(i){step=Math.max(-1,Math.min(4,i));QX=[];
+ if(step==0){S.q1=4;S.q2=-4;S.r=0.5}
+ if(step==2){S.q1=4;S.q2=-4;S.r=0.5;rec3=[]}
+ if(step==3){S.q1=2;S.q2=2;S.r=0.5;rec4=[]}
+ if(step==4){S.q1=3;S.q2=-6;S.r=0.5}
+ document.getElementById('simc').style.display='';
+ const a=document.getElementById('act');let h='';
+ if(step==-1)h=intro();
+ if(step==0)h=`<h2>Actividad 1: ¿cómo interactúan las cargas?</h2><p class="goal">Objetivo: descubrir que existen dos tipos de carga y cómo se afectan.</p>
+ <p>Recuerda: las cargas se miden en μC (1 μC = 0,000001 C). Cambia el signo y valor de cada carga. Prueba las cuatro combinaciones (+ +, − −, + −, − +) y también con carga 0.</p>
+ ${sl('Carga q₁','q1',-10,10,1,'',fq)}${sl('Carga q₂','q2',-10,10,1,'',fq)}
+ <button class="b" onclick="S.q1=5;S.q2=5;go1()">+ +</button><button class="b" onclick="S.q1=-5;S.q2=-5;go1()">− −</button><button class="b" onclick="S.q1=5;S.q2=-5;go1()">+ −</button><button class="b" onclick="S.q1=0;S.q2=5;go1()">0 +</button>
+ <div class="live" id="live"></div>
+ ${quiz('¿Qué pasa entre dos cargas del mismo signo?',['Se atraen','Se repelen','No interactúan'],1,'Cargas iguales se repelen; cargas opuestas se atraen.')}`;
+ if(step==1)h=`<h2>Actividad 2: cargar por frotamiento</h2><p class="goal">Objetivo: entender la carga neta, su conservación y que viene en múltiplos de e.</p>
+ <p>Ambos cuerpos empiezan neutros (6 protones y 6 electrones). Frotar mueve electrones; los protones no se mueven. Usamos e como unidad: 1 e = 1,6×10⁻¹⁹ C.</p>
+ <button class="b pri" onclick="mv('A','B')">Pasar 1 e⁻ de A a B</button><button class="b" onclick="mv('B','A')">Pasar 1 e⁻ de B a A</button><button class="b" onclick="bod={A:6,B:6};drawSim();tot()">Reiniciar</button>
+ <div class="live" id="live"></div>
+ ${quiz('Si el paño pierde 3 electrones, su carga neta es…',['−3e','+3e','0','+3e y la barra +3e'],1,'Perder electrones deja un exceso de protones: carga positiva. La barra gana esos 3 e⁻ y queda con −3e.')}
+ ${quiz('Suma q(A)+q(B) después de frotar. ¿Qué observas?',['Cambia al azar','Siempre es 0: la carga se conserva','Aumenta con cada paso'],1,'Principio de conservación de la carga: no se crea ni se destruye, solo se transfiere. Además q = n·e, con e = 1,602×10⁻¹⁹ C: la carga está cuantizada.')}`;
+ if(step==2)h=`<h2>Actividad 3: fuerza y distancia</h2><p class="goal">Objetivo: ver cómo cambia F al variar r, con las cargas fijas (+4,0 μC y −4,0 μC).</p>
+ ${sl('Distancia r','r',0.2,1,0.05,'',fr)}<div class="live" id="live"></div>
+ <button class="b pri" onclick="reg3()">Registrar medida</button><button class="b" onclick="rec3=[];tab()">Borrar</button>
+ <div class="tw" id="tab"></div>
+ <p>Mide con r = 0,25 · 0,50 · 1,00 m. Compara F con cada distancia y mira la última columna.</p>
+ ${quiz('Si la distancia se duplica, la fuerza…',['se duplica','se reduce a la mitad','se reduce a la cuarta parte','no cambia'],2,'F es inversamente proporcional al cuadrado de r: F ∝ 1/r². Por eso F·r² es constante.')}`;
+ if(step==3)h=`<h2>Actividad 4: fuerza y valor de las cargas</h2><p class="goal">Objetivo: ver cómo cambia F al variar q₁ y q₂, con r = 0,50 m fija.</p>
+ ${sl('Carga q₁','q1',1,10,1,'',fqa)}${sl('Carga q₂','q2',1,10,1,'',fqa)}<div class="live" id="live"></div>
+ <button class="b pri" onclick="reg4()">Registrar medida</button><button class="b" onclick="rec4=[];tab()">Borrar</button>
+ <div class="tw" id="tab"></div>
+ <p>Duplica solo q₁, luego solo q₂, luego ambas. Observa la última columna.</p>
+ ${quiz('Si q₁ y q₂ se duplican a la vez, la fuerza…',['se duplica','se multiplica por 4','se multiplica por 8','no cambia'],1,'F es directamente proporcional al producto q₁·q₂: 2 × 2 = 4.')}`;
+ if(step==4)h=`<h2>Actividad 5: enuncia la ley</h2><p class="goal">Objetivo: reunir lo descubierto en una sola ley.</p>
+ ${sl('Carga q₁','q1',-10,10,1,'',fq)}${sl('Carga q₂','q2',-10,10,1,'',fq)}${sl('Distancia r','r',0.2,1,0.05,'',fr)}
+ <div class="live" id="live"></div>
+ <p><b>Completa lo que descubriste:</b></p>
+ <p>La fuerza entre dos cargas puntuales es <select id="sa"><option>elige…</option><option>directamente proporcional</option><option>inversamente proporcional</option></select> al producto de las cargas e <select id="sb"><option>elige…</option><option>directamente proporcional</option><option>inversamente proporcional</option></select> al cuadrado de la distancia entre ellas.</p>
+ <button class="b pri" onclick="chk()">Comprobar</button><div class="fb" id="cf" aria-live="polite"></div><div id="law"></div>
+ <div class="quiz"><b>Desafío:</b> elige q₁, q₂ y r para que F sea cercana a 1,00 N (±0,05). <button class="b" onclick="ch()">Comprobar</button><span class="fb" id="chf"></span></div>`;
+ a.innerHTML=h;nav();upd();if(step==1){drawSim();tot()}if(step==-1)atx();tab()}
+function go1(){['q1','q2'].forEach(k=>{document.getElementById('s_'+k).value=S[k]});upd()}
+function mv(f,t){if(bod[f]>0){bod[f]--;bod[t]++;drawSim();tot()}}
+function tot(){const l=document.getElementById('live');if(l){const a=P-bod.A,b=P-bod.B;l.innerHTML=`q(A) = ${a>0?'+':''}${a}e · q(B) = ${b>0?'+':''}${b}e · q(A) + q(B) = <span class="big">${a+b}e</span>`}}
+function reg3(){if(!rec3.some(x=>x.r==S.r)){rec3.push({r:S.r,F:Fm()});rec3.sort((a,b)=>a.r-b.r)}tab()}
+function reg4(){if(!rec4.some(x=>x.a==S.q1&&x.b==S.q2)){rec4.push({a:S.q1,b:S.q2,F:Fm()})}tab()}
+function tab(){const e=document.getElementById('tab');if(!e)return;
+ if(step==2){e.innerHTML=rec3.length?`<table><tr><th>r (m)</th><th>F (N)</th><th>F·r² (N·m²)</th></tr>${rec3.map(x=>`<tr><td>${n(x.r)}</td><td>${nf(x.F)}</td><td>${n(x.F*x.r*x.r,3)}</td></tr>`).join('')}</table>`:'<p class="fb">Aún no hay medidas registradas.</p>'}
+ if(step==3){e.innerHTML=rec4.length?`<table><tr><th>q₁</th><th>q₂</th><th>F (N)</th><th>F/(q₁q₂)</th></tr>${rec4.map(x=>`<tr><td>${n(x.a,1)}</td><td>${n(x.b,1)}</td><td>${nf(x.F)}</td><td>${n(x.F/(x.a*x.b),4)}</td></tr>`).join('')}</table>`:'<p class="fb">Aún no hay medidas registradas.</p>'}}
+function chk(){const a=document.getElementById('sa').value,b=document.getElementById('sb').value,f=document.getElementById('cf');
+ if(a=='directamente proporcional'&&b=='inversamente proporcional'){f.textContent='✔ Correcto.';done[4]=1;nav();
+ document.getElementById('law').innerHTML=`<div class="law"><b>Ley de Coulomb</b><p>La magnitud de la fuerza eléctrica entre dos cargas puntuales en reposo es directamente proporcional al producto de sus cargas e inversamente proporcional al cuadrado de la distancia que las separa. La fuerza actúa sobre la línea que une las cargas: es de repulsión si tienen el mismo signo y de atracción si tienen signos opuestos.</p><div class="f">F = k · |q₁ · q₂| / r²</div><p>k ≈ 8,99×10⁹ N·m²/C² (constante de Coulomb) · q en coulombs (C) · r en metros (m) · F en newtons (N). Las fuerzas sobre cada carga son de igual magnitud y sentido opuesto (tercera ley de Newton).</p></div>`}
+ else f.textContent='Revisa las tablas de las actividades 3 y 4: ¿F crece o decrece con q? ¿y con r?'}
+function ch(){const F=Fm(),f=document.getElementById('chf');f.textContent=Math.abs(F-1)<=0.05?' ✔ F = '+nfa(F):' F = '+nfa(F)+'. Sigue ajustando.'}
+go(-1);
+</script></body></html>
